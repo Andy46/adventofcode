@@ -1,2 +1,4 @@
-# adventofcode
-Repo for advent of challenges
+# Advent of code
+Repo for advent of code challenges
+
+Link: https://adventofcode.com
