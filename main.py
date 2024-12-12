@@ -31,7 +31,7 @@ def isInGarden(cell):
 def getContiguousCells(x, y):
     return [[x-1,y],[x,y-1],[x+1,y],[x,y+1]]
 
-def getContiguousCells(garden, x, y):
+def getContiguousPlants(garden, x, y):
     cells = filter(isInGarden, getContiguousCells())
     return cells
 
@@ -45,16 +45,22 @@ def getRegion(garden, x, y):
     newCells = [[x,y]]
     garden[x][y] = None
     while len(newCells) != 0:
+
         nextCells = []
         for cell in newCells:
-            nextCells = list(
+            nextCells = list([cell for cell in getContiguousPlants(initialGarden))
+            [nextCells.remove(cell) for cell in 
+            # get contiguous cells to all cells
+            # remove duplicates
 
             # Remove cell from search list
             nextCells.append(cell)
 
+
         newCells = nextCells
 
 
+    return region
 
 def findRegions(garden):
     regions = {}
@@ -62,7 +68,6 @@ def findRegions(garden):
         for y in range(len(garden[0])):
             if garden[x][y] is not None:
                 plant, region = getRegion(garden, x, y)
-                #[garden[cell[0]][cell[1] = None for cell in region]
                 if plant in regions:
                     regions[plant].append(region)
                 else:
