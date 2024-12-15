@@ -3,8 +3,8 @@
 import copy
 import click
 import re
-# import multiprocessing
-# from multiprocessing import Pool
+import multiprocessing
+from multiprocessing import Pool
 
 # Files
 import sys, os
@@ -107,14 +107,22 @@ def determineMinimumTokens(buttonA, buttonB, prize):
 
     return min(combinationsTokens) if len(combinationsTokens) > 0 else 0
 
+
+def calculateMachine(machine):
+    print(f"Machine {machines.index(machine)}")
+    buttons = machine['buttons']
+    prize   = machine['prize']
+    machineTokens = determineMinimumTokens(buttons[0], buttons[1], prize) 
+    return machineTokens
+
+
+MAX_THREADS = multiprocessing.cpu_count()
+print(f"Multicore processing, {MAX_THREADS} threads will be used.")
+machineTokens = []
 machines = copy.deepcopy(initialData)
-totalTokens = 0
-with click.progressbar(machines) as bar: # Progress bar
-    for machine in bar:
-        buttons = machine['buttons']
-        prize   = machine['prize']
-        machineTokens = determineMinimumTokens(buttons[0], buttons[1], prize) 
-        totalTokens += machineTokens
+with Pool(processes=MAX_THREADS) as pool:
+    machineTokens = pool.map(calculateMachine, machines)
+totalTokens = sum(machineTokens)
 
 # Output results
 print(f"Total tokens: {totalTokens}")
