@@ -1,14 +1,16 @@
+#!/bin/python3
+
 import copy
 import click
 import re
-import multiprocessing
-from multiprocessing import Pool
+# import multiprocessing
+# from multiprocessing import Pool
 
 # Files
 import sys, os
 filepath = os.path.dirname(sys.argv[0])
-filename = f"{filepath}/00_example1.data"
 filename = f"{filepath}/00_test.data"
+filename = f"{filepath}/00_example1.data"
 
 # Read data
 initialData = []
@@ -106,16 +108,17 @@ def calculateChainTokens(chain):
 
 machines = copy.deepcopy(initialData)
 totalTokens = 0
-for machine in machines:
-    buttons = machine['buttons']
-    prize   = machine['prize']
-    possible, chains = findTokenChain(buttons, prize)
+with click.progressbar(machines) as bar: # Progress bar
+    for machine in bar:
+        buttons = machine['buttons']
+        prize   = machine['prize']
+        possible, chains = findTokenChain(buttons, prize)
 
-    if possible:
-        # print(chains)
-        chainTokens = [calculateChainTokens(chain) for chain in chains]
-        minChainTokens = min(chainTokens)
-        totalTokens += minChainTokens
+        if possible:
+            # print(chains)
+            chainTokens = [calculateChainTokens(chain) for chain in chains]
+            minChainTokens = min(chainTokens)
+            totalTokens += minChainTokens
 
 # Output results
 print(f"Total tokens: {totalTokens}")
