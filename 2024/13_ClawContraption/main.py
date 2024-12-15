@@ -1,53 +1,121 @@
 import copy
 import click
 import re
+import multiprocessing
+from multiprocessing import Pool
 
 # Files
 import sys, os
 filepath = os.path.dirname(sys.argv[0])
-filename = f"{filepath}/00_test.data"
 filename = f"{filepath}/00_example1.data"
+filename = f"{filepath}/00_test.data"
 
 # Read data
 initialData = []
 with open(filename, "r") as file:
     machine = {}
-    buttons = {}
+    buttons = []
     prize   = {}
 
     # Find machines
     for line in file.readlines():
         line = line.strip()
         if "Button" in line:
-            name = re.findall(r"Button (.*):", line)
+            name = re.findall(r"Button (.*):", line)[0]
             moves = re.findall(r"(.\+\d+)", line)
-            print(f"{name}: {moves}")
-            for move in moves:
-                axis, value = move.split('+')
-                value = int(value)
-                buttons[axis] = value
-                
-            print(buttons)
+            newButton = {}
+            newButton['moves'] = [int(value) for axis, value in [m.split('+') for m in moves]] 
+            if name == 'A':
+                newButton['tokens'] = 3
+            if name == 'B':
+                newButton['tokens'] = 1
+            buttons.append(newButton)
+
         elif "Prize" in line:
             loc = re.findall(r"(.=\d+)", line)
-            for coord in loc:
-                axis, value = coord.split('=')
-                value = int(value)
-                prize[axis] = value
+            prize = [int(value) for axis, value in [l.split('=') for l in loc]] 
 
         else:
+            machine            = {}
             machine["buttons"] = buttons
             machine["prize"]   = prize
             initialData.append(machine)
-            machine = {}
-            buttons = {}
+            buttons = []
             prize   = {}
             continue
 
-# List machines
-for machine in initialData:
-    print (machine)
+# # List machines
+# for machine in initialData:
+#     print (machine)
 
 #######################################
 # Part 1 - #
 #######################################
+
+def findTokens(button, prize):
+    tokens = 0
+    while all(prize, lambda x: x > 0):
+        # Push button
+        prize - button['moves']
+        tokens += button['tokens']
+    if all(prize, lambda x: x == 0):
+        return True, tokens
+    else:
+        return False, 0
+
+def achievedPrize(prize):
+    return all([x == 0 for x in prize])
+
+def overflowPrize(prize):
+    return any([x < 0 for x in prize])
+
+def findTokenChain(buttons, prize):
+    # Push button
+    currentButton = buttons[0]
+    nextPrize = [x - y for x, y in zip(prize, currentButton['moves'])] 
+
+    # answer
+    chains = []
+
+    if achievedPrize(nextPrize):
+        return True, [[currentButton]]
+    elif overflowPrize(nextPrize):
+        return False, []
+    else:
+        # Keep using button until fail/achieve
+        achieved, subchains = findTokenChain(buttons, nextPrize)
+        if achieved:
+            for subchain in subchains:
+                subchain.append(currentButton)
+                chains.append(subchain)
+        
+        if len(buttons) > 1:
+            achieved, subchains = findTokenChain(buttons[1:], nextPrize)
+            if achieved:
+                for subchain in subchains:
+                    subchain.append(currentButton)
+                    chains.append(subchain)
+
+        # Use next button until fail/achive
+        return (len(chains) > 0), chains
+
+
+def calculateChainTokens(chain):
+    totalTokens = sum([button['tokens'] for button in chain])
+    return totalTokens
+
+machines = copy.deepcopy(initialData)
+totalTokens = 0
+for machine in machines:
+    buttons = machine['buttons']
+    prize   = machine['prize']
+    possible, chains = findTokenChain(buttons, prize)
+
+    if possible:
+        # print(chains)
+        chainTokens = [calculateChainTokens(chain) for chain in chains]
+        minChainTokens = min(chainTokens)
+        totalTokens += minChainTokens
+
+# Output results
+print(f"Total tokens: {totalTokens}")
