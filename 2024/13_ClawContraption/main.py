@@ -9,8 +9,8 @@ import re
 # Files
 import sys, os
 filepath = os.path.dirname(sys.argv[0])
-filename = f"{filepath}/00_test.data"
 filename = f"{filepath}/00_example1.data"
+filename = f"{filepath}/00_test.data"
 
 # Read data
 initialData = []
@@ -36,19 +36,23 @@ with open(filename, "r") as file:
         elif "Prize" in line:
             loc = re.findall(r"(.=\d+)", line)
             prize = [int(value) for axis, value in [l.split('=') for l in loc]] 
-
-        else:
-            machine            = {}
+            
             machine["buttons"] = buttons
             machine["prize"]   = prize
             initialData.append(machine)
+    
+            # Next machine
+            machine = {}        
             buttons = []
-            prize   = {}
+        
+        else: # Ignore empty lines
             continue
 
-# # List machines
-# for machine in initialData:
-#     print (machine)
+def printMachines(machines):
+    for machine in machines:
+        print(f"{machine['buttons']} | {machine['prize']}")
+
+# printMachines(initialData)
 
 #######################################
 # Part 1 - #
@@ -112,13 +116,14 @@ with click.progressbar(machines) as bar: # Progress bar
     for machine in bar:
         buttons = machine['buttons']
         prize   = machine['prize']
-        possible, chains = findTokenChain(buttons, prize)
+        for i in range(len(buttons)):
+            possible, chains = findTokenChain(buttons[i:], prize)
 
-        if possible:
-            # print(chains)
-            chainTokens = [calculateChainTokens(chain) for chain in chains]
-            minChainTokens = min(chainTokens)
-            totalTokens += minChainTokens
+            if possible:
+                # print(chains)
+                chainTokens = [calculateChainTokens(chain) for chain in chains]
+                minChainTokens = min(chainTokens)
+                totalTokens += minChainTokens
 
 # Output results
 print(f"Total tokens: {totalTokens}")
