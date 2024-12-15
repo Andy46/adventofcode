@@ -35,8 +35,8 @@ with open(filename, "r") as file:
 
         elif "Prize" in line:
             loc = re.findall(r"(.=\d+)", line)
-            OFFSET = 0
             OFFSET = 10000000000000
+            OFFSET = 0
             prize = [int(value)+OFFSET for axis, value in [l.split('=') for l in loc]] 
             
             machine["buttons"] = buttons
