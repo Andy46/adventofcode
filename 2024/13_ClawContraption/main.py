@@ -48,6 +48,9 @@ with open(filename, "r") as file:
         else: # Ignore empty lines
             continue
 
+def printMachine(machine):
+    print(f"{machine['buttons']} | {machine['prize']}")
+
 def printMachines(machines):
     for machine in machines:
         print(f"{machine['buttons']} | {machine['prize']}")
@@ -118,9 +121,16 @@ with click.progressbar(machines) as bar: # Progress bar
         prize   = machine['prize']
         for i in range(len(buttons)):
             possible, chains = findTokenChain(buttons[i:], prize)
-
+            
             if possible:
-                # print(chains)
+
+                print("")
+                printMachine(machine)
+                for chain in chains:
+                    countA = len([button for button in chain if button == buttons[0]])
+                    countB = len([button for button in chain if button == buttons[1]])
+                    print(f"A: {countA} - B: {countB}")
+
                 chainTokens = [calculateChainTokens(chain) for chain in chains]
                 minChainTokens = min(chainTokens)
                 totalTokens += minChainTokens
