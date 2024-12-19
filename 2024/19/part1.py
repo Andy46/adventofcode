@@ -39,3 +39,31 @@ def orderTowels(towels):
     return sets
 print(orderTowels(INITIAL_TOWELS))
 
+
+ORDERED_TOWELS = orderTowels(INITIAL_TOWELS)
+
+def isPatternAvailable(towels, pattern):
+    pattern = copy.deepcopy(pattern)
+    while len(pattern) > 0:
+        print(pattern)
+        nTowels = towels[pattern[0]] if pattern[0] in towels else []
+        print(nTowels)
+        prev = pattern
+        pattern = [pattern[len(towel):] for towel in nTowels if len(towel) <= len(pattern) and towel == pattern[:len(towel)]]
+        if not pattern or prev == pattern:
+            return False
+
+#
+#        for towel in nTowels:
+#            print(towel, pattern[:len(towel)])
+#            if towel == pattern[:len(towel)]:
+#                print(True)
+#                pattern = pattern[len(towel):]
+#                continue
+#        return False
+    return True
+
+print("")
+for pattern in INITIAL_PATTERNS:
+    available = isPatternAvailable(ORDERED_TOWELS, pattern)
+    print(f"Pattern {pattern} available: {available}")
