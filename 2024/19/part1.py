@@ -8,7 +8,6 @@ import sys, os
 filepath = os.path.dirname(sys.argv[0])
 
 filename = f"{filepath}/00_example1.data"
-filename = f"{filepath}/00_test3.data"
 filename = f"{filepath}/00_test.data"
 
 # Read data
@@ -43,52 +42,40 @@ def orderTowels(towels):
 
 ORDERED_TOWELS = orderTowels(INITIAL_TOWELS)
 
+patternList = {}
+
 def isPatternAvailable(towels, pattern):
     if pattern == "":
-        # return [True, []]
-        return True
+        return 1
     
     matchingTowels = []
     if pattern[0] in towels:
         matchingTowels = [towel for towel in towels[pattern[0]] if towel == pattern[:len(towel)]]
 
-    available = False
-    towelSets = []
+    available = 0
     for towel in matchingTowels:
-        # available, sets = isPatternAvailable(towels, pattern[len(towel):])
-        available = isPatternAvailable(towels, pattern[len(towel):])
-        # if available:
-            # sets.append(towel)
-            # towelSets.append(sets)
-        if available:
-            return True
-
-    # if len(towelSets) > 0:
-    #     return [True, towelSets]
-    # else:
-    #     return [False, []]
-    return False
+        count = 0
+        if pattern[len(towel):] in patternList:
+            available += patternList[pattern[len(towel):]]
+        else:
+            subCount = isPatternAvailable(towels, pattern[len(towel):])
+            patternList[pattern[len(towel):]] = subCount
+            available += subCount
+        
+    return available
 
 def isAvailable(pattern):
-    temp = isPatternAvailable(ORDERED_TOWELS, pattern)
-    temp.append(pattern)
-    return temp
+    return isPatternAvailable(ORDERED_TOWELS, pattern)
 
-import multiprocessing
 from multiprocessing import Pool
 
-# MAX_THREADS = multiprocessing.cpu_count()
-# with Pool(1) as p:
-#     availablePatterns = p.map(isAvailable, INITIAL_PATTERNS)
-
 availablePatterns = []
-for pattern in INITIAL_PATTERNS:
-    temp = isPatternAvailable(ORDERED_TOWELS, pattern)
-    # temp.append(pattern)
-    availablePatterns.append(temp)
+with click.progressbar(INITIAL_PATTERNS) as bar:
+    with Pool(20) as processes:
+        availablePatterns = processes.map(isAvailable, bar)
 
 #availablePatterns = [pattern for pattern in availablePatterns if pattern[0]]
-count = len([pattern for pattern in availablePatterns if pattern])
+count = sum(availablePatterns)
 
 
 # print(f"Available patterns: {availablePatterns}")
