@@ -8,6 +8,7 @@ import sys, os
 filepath = os.path.dirname(sys.argv[0])
 
 filename = f"{filepath}/00_example1.data"
+filename = f"{filepath}/00_test3.data"
 filename = f"{filepath}/00_test.data"
 
 # Read data
@@ -44,8 +45,9 @@ ORDERED_TOWELS = orderTowels(INITIAL_TOWELS)
 
 def isPatternAvailable(towels, pattern):
     if pattern == "":
-        return [True, []]
-
+        # return [True, []]
+        return True
+    
     matchingTowels = []
     if pattern[0] in towels:
         matchingTowels = [towel for towel in towels[pattern[0]] if towel == pattern[:len(towel)]]
@@ -53,16 +55,19 @@ def isPatternAvailable(towels, pattern):
     available = False
     towelSets = []
     for towel in matchingTowels:
-        available, sets = isPatternAvailable(towels, pattern[len(towel):])
-
+        # available, sets = isPatternAvailable(towels, pattern[len(towel):])
+        available = isPatternAvailable(towels, pattern[len(towel):])
+        # if available:
+            # sets.append(towel)
+            # towelSets.append(sets)
         if available:
-            sets.append(towel)
-            towelSets.append(sets)
+            return True
 
-    if len(towelSets) > 0:
-        return [True, towelSets]
-    else:
-        return [False, []]
+    # if len(towelSets) > 0:
+    #     return [True, towelSets]
+    # else:
+    #     return [False, []]
+    return False
 
 def isAvailable(pattern):
     temp = isPatternAvailable(ORDERED_TOWELS, pattern)
@@ -72,17 +77,19 @@ def isAvailable(pattern):
 import multiprocessing
 from multiprocessing import Pool
 
-MAX_THREADS = multiprocessing.cpu_count()
-with Pool(MAX_THREADS) as p:
-    availablePatterns = p.map(isAvailable, INITIAL_PATTERNS)
+# MAX_THREADS = multiprocessing.cpu_count()
+# with Pool(1) as p:
+#     availablePatterns = p.map(isAvailable, INITIAL_PATTERNS)
 
-# availablePatterns = []
-# for pattern in INITIAL_PATTERNS:
-#     temp = isPatternAvailable(ORDERED_TOWELS, pattern)
-#     temp.append(pattern)
-#     availablePatterns.append(temp)
+availablePatterns = []
+for pattern in INITIAL_PATTERNS:
+    temp = isPatternAvailable(ORDERED_TOWELS, pattern)
+    # temp.append(pattern)
+    availablePatterns.append(temp)
 
-availablePatterns = [pattern for pattern in availablePatterns if pattern[0]]
+#availablePatterns = [pattern for pattern in availablePatterns if pattern[0]]
+count = len([pattern for pattern in availablePatterns if pattern])
 
-print(f"Available patterns: {availablePatterns}")
-print(f"Available patterns count: {len(availablePatterns)}")
+
+# print(f"Available patterns: {availablePatterns}")
+print(f"Available patterns count: {count}")
