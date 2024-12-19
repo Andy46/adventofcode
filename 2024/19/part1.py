@@ -23,6 +23,19 @@ with open(filename, "r") as file:
         INITIAL_PATTERNS.append(line.strip())
 
 print (INITIAL_TOWELS)
-for pattern in INITIAL_PATTERNS:
-    print(pattern)
+#for pattern in INITIAL_PATTERNS:
+#    print(pattern)
+
+def orderTowels(towels):
+    towels = copy.deepcopy(towels)
+    towels.sort()
+    towels.reverse()
+    print(towels)
+    sets = {}
+    for towel in towels:
+        if towel[0] not in sets:
+            sets[towel[0]] = []
+        sets[towel[0]].append(towel)
+    return sets
+print(orderTowels(INITIAL_TOWELS))
 
