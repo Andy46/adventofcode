@@ -7,8 +7,8 @@ import click
 import sys, os
 filepath = os.path.dirname(sys.argv[0])
 
-filename = f"{filepath}/00_test.data"
 filename = f"{filepath}/00_example1.data"
+filename = f"{filepath}/00_test.data"
 
 # Read data
 INITIAL_TOWELS   = []
@@ -22,7 +22,7 @@ with open(filename, "r") as file:
     for line in lines[2:]:
         INITIAL_PATTERNS.append(line.strip())
 
-print (INITIAL_TOWELS)
+# print (INITIAL_TOWELS)
 #for pattern in INITIAL_PATTERNS:
 #    print(pattern)
 
@@ -30,40 +30,59 @@ def orderTowels(towels):
     towels = copy.deepcopy(towels)
     towels.sort()
     towels.reverse()
-    print(towels)
+    # print(towels)
     sets = {}
     for towel in towels:
         if towel[0] not in sets:
             sets[towel[0]] = []
         sets[towel[0]].append(towel)
     return sets
-print(orderTowels(INITIAL_TOWELS))
+# print(orderTowels(INITIAL_TOWELS))
 
 
 ORDERED_TOWELS = orderTowels(INITIAL_TOWELS)
 
 def isPatternAvailable(towels, pattern):
-    pattern = copy.deepcopy(pattern)
-    while len(pattern) > 0:
-        print(pattern)
-        nTowels = towels[pattern[0]] if pattern[0] in towels else []
-        print(nTowels)
-        prev = pattern
-        pattern = [pattern[len(towel):] for towel in nTowels if len(towel) <= len(pattern) and towel == pattern[:len(towel)]]
-        if not pattern or prev == pattern:
-            return False
+    if pattern == "":
+        return [True, []]
 
-#
-#        for towel in nTowels:
-#            print(towel, pattern[:len(towel)])
-#            if towel == pattern[:len(towel)]:
-#                print(True)
-#                pattern = pattern[len(towel):]
-#                continue
-#        return False
-    return True
+    matchingTowels = []
+    if pattern[0] in towels:
+        matchingTowels = [towel for towel in towels[pattern[0]] if towel == pattern[:len(towel)]]
 
-print("")
-for pattern in INITIAL_PATTERNS:
-    available = isPatternAvailable(ORDERED_TOWELS, pattern)
-    print(f"Pattern {pattern} available: {available}")
+    available = False
+    towelSets = []
+    for towel in matchingTowels:
+        available, sets = isPatternAvailable(towels, pattern[len(towel):])
+
+        if available:
+            sets.append(towel)
+            towelSets.append(sets)
+
+    if len(towelSets) > 0:
+        return [True, towelSets]
+    else:
+        return [False, []]
+
+def isAvailable(pattern):
+    temp = isPatternAvailable(ORDERED_TOWELS, pattern)
+    temp.append(pattern)
+    return temp
+
+import multiprocessing
+from multiprocessing import Pool
+
+MAX_THREADS = multiprocessing.cpu_count()
+with Pool(MAX_THREADS) as p:
+    availablePatterns = p.map(isAvailable, INITIAL_PATTERNS)
+
+# availablePatterns = []
+# for pattern in INITIAL_PATTERNS:
+#     temp = isPatternAvailable(ORDERED_TOWELS, pattern)
+#     temp.append(pattern)
+#     availablePatterns.append(temp)
+
+availablePatterns = [pattern for pattern in availablePatterns if pattern[0]]
+
+print(f"Available patterns: {availablePatterns}")
+print(f"Available patterns count: {len(availablePatterns)}")
