@@ -20,9 +20,13 @@ with open(filename, "r") as file:
 
 # Helper functions
 def printMaze(maze):
+    N = 3
     for row in maze:
         for item in row:
-            print (item, end='')
+            if str(item) in "E#.S":
+                print (item*N, end='')
+            else:
+                print("{0:3d}".format(item), end='')
         print("")
 
 # Find and detection functions
@@ -71,7 +75,7 @@ def isValidPosition(maze, position):
     return isEmpty(maze, position)
 
 def getNextPositionsInMaze(maze, reindeer):
-    allPosition = getAllDirPositions(reindeer)
+    allPositions = list(getAllDirPositions(reindeer).values())
     validPositions = [position for position in allPositions if isValidPosition(maze, position)]
     return validPositions
 
@@ -81,14 +85,16 @@ def setMazeCell(maze, cell, cost):
 def floodFill(MAZE, FIRST, LAST):
     maze = copy.deepcopy(MAZE)
 
-    nextCells = [FIRST]
+    newCells = [FIRST]
     cost = 0
-    while len(nextCells):
-        for cell in nextCells:
+    while len(newCells):
+        nextCells = [] 
+        for cell in newCells:
             setMazeCell(maze, cell, cost)
-            nextCells = getNextPositionsInMaze(maze, cell)
-            cost += 1
-        printMaze(maze)
+            nextCells.extend(getNextPositionsInMaze(maze, cell))
+        cost += 1
+        # printMaze(maze)
+        newCells = nextCells
     return maze
 
 # ###################################
@@ -109,7 +115,10 @@ if __name__ == "__main__":
 
     # Run part 1
     filledMaze = floodFill(maze, END, START)
+    print(f"\nFinal maze:")
+    printMaze(filledMaze)
 
+    filledMaze = floodFill(maze, START, END)
     print(f"\nFinal maze:")
     printMaze(filledMaze)
 
