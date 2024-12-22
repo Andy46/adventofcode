@@ -7,230 +7,216 @@ import click
 import sys, os
 filepath = os.path.dirname(sys.argv[0])
 
-filename = f"{filepath}/00_example1.data"
-filename = f"{filepath}/00_example2.data"
-filename = f"{filepath}/00_example3.data"
-
-filename = f"{filepath}/00_example3_moveleft.data"
-filename = f"{filepath}/00_example3_moveright.data"
-filename = f"{filepath}/00_example3_moveup.data"
-filename = f"{filepath}/00_example3_movedown.data"
-
 filename = f"{filepath}/00_test.data"
 
+filename = f"{filepath}/00_example1.data"
+filename = f"{filepath}/00_example2.data"
+
 # Read data
-INITIAL_WAREHOUSE = []
-INITIAL_ROBOT_MOVES = []
+INITIAL_MAZE = []
 with open(filename, "r") as file:
     lines = [line.strip() for line in file.readlines()]
-
-    fileSplit = lines.index('')
-    warehouseLines = lines[:fileSplit]
-    movesLines = lines[(fileSplit+1):]
-    
-    INITIAL_WAREHOUSE = [list(row.strip()) for row in warehouseLines]
-
-    for line in movesLines:
-        INITIAL_ROBOT_MOVES.extend(list(line))
+    INITIAL_MAZE = [list(row.strip()) for row in lines]
 
 # Helper functions
-def printWarehouse(warehouse):
-    for row in warehouse:
+def printMaze(maze):
+    for row in maze:
         for item in row:
-            print (item, end='')
+            if str(item) in "E#.S?":
+                print (item*6, end='')
+            else:
+                print("{0:6d}".format(item), end='')
         print("")
 
-def convertWarehouse(warehouse):
-    newWarehouse = []
-    for y in range(len(warehouse)):
-        row = []
-        for x in range(len(warehouse[0])):
-            if isBox(warehouse, [x,y]):
-                row.extend(['[', ']'])
-            elif isWall(warehouse, [x,y]):
-                row.extend(['#', '#'])
-            elif isEmpty(warehouse, [x,y]):
-                row.extend(['.', '.'])
-            elif isRobot(warehouse, [x,y]):
-                row.extend(['@', '.'])
-        newWarehouse.append(row)
-    return newWarehouse
-
 # Find and detection functions
-TOKEN_WALL  = '#'
-def isWall(warehouse, pos):
-    return warehouse[pos[1]][pos[0]] == TOKEN_WALL
-
-TOKEN_BOX_LEFT  = '['
-TOKEN_BOX_RIGHT = ']'
-TOKEN_BOX       = 'O'
-def isBox(warehouse, pos):
-    return warehouse[pos[1]][pos[0]] in [TOKEN_BOX, TOKEN_BOX_LEFT, TOKEN_BOX_RIGHT]
-
-TOKEN_EMPTY = '.'
-def isEmpty(warehouse, pos):
-    return warehouse[pos[1]][pos[0]] == TOKEN_EMPTY
-
-TOKEN_ROBOT = '@'
-def isRobot(warehouse, pos):
-    return warehouse[pos[1]][pos[0]] == TOKEN_ROBOT
-
-def findRobot(warehouse):
-    for y in range(len(warehouse)):
-        for x in range(len(warehouse[0])):
-            if warehouse[y][x] == TOKEN_ROBOT:
+def findToken(maze, token):
+    for y in range(len(maze)):
+        for x in range(len(maze)):
+            if maze[y][x] == token:
                 return [x,y]
-    print("ERROR: No robot found")
+    print(f"ERROR: No {token} found")
     return None
 
-def getNextPosition(robot, dir): # Test performance if/else vs calculateAll/getToken
-    positions = {'^' : [robot[0]  , robot[1]-1],
-                 '>' : [robot[0]+1, robot[1]  ],
-                 'v' : [robot[0]  , robot[1]+1],
-                 '<' : [robot[0]-1, robot[1]  ]}
-    return positions[dir] 
 
-def findEmptyOrWall(warehouse, currentPos, dir):
-    nextPos = getNextPosition(currentPos, dir)
-    while True:
-        if isEmpty(warehouse, nextPos):
-            return nextPos
-        elif isWall(warehouse, nextPos):
-            return nextPos
-        nextPos = getNextPosition(nextPos, dir)
+def findEnd(maze):
+    TOKEN_END   = 'E'
+    return findToken(maze, TOKEN_END)
 
-def getBoxSides(warehouse, boxPos):
-    posLeft = []
-    posRight = []
-    if warehouse[boxPos[1]][boxPos[0]] == TOKEN_BOX_LEFT:
-        posLeft = [boxPos[0], boxPos[1]]
-        posRight = [boxPos[0]+1, boxPos[1]]
-    elif warehouse[boxPos[1]][boxPos[0]] == TOKEN_BOX_RIGHT:
-        posLeft = [boxPos[0]-1, boxPos[1]]
-        posRight = [boxPos[0], boxPos[1]]
-    return [posLeft, posRight]
+def isEnd(maze, pos):
+    TOKEN_END   = 'E'
+    return maze[pos[1]][pos[0]] == TOKEN_END
 
-# Moving functions
-def getDistance(robot, position):
-    return abs(sum([pair[0] - pair[1] for pair in zip(robot, position)]))
+def findStart(maze):
+    TOKEN_START   = 'S'
+    return findToken(maze, TOKEN_START)
 
-def shiftHorizontal(row, startPos, endPos, direction):
-    newRow = copy.deepcopy(row)
-    if direction == '>':
-        newRow[(startPos[0]+1):(endPos[0]+1)] = row[startPos[0]:(endPos[0])]
-        newRow[startPos[0]] = TOKEN_EMPTY
-    elif direction == '<':
-        newRow[(endPos[0]):startPos[0]] = row[(endPos[0]+1):(startPos[0]+1)]
-        newRow[startPos[0]] = TOKEN_EMPTY
-    return newRow
+def isStart(maze, pos):
+    TOKEN_START   = 'S'
+    return maze[pos[1]][pos[0]] == TOKEN_START
 
-def canMoveVertical(warehouse, boxPos, direction):
+def isWall(maze, pos):
+    TOKEN_WALL  = '#'
+    return maze[pos[1]][pos[0]] == TOKEN_WALL
+
+def isEmpty(maze, pos):
+    TOKEN_EMPTY = '.'
+    return maze[pos[1]][pos[0]] == TOKEN_EMPTY
+
+# Transformation functions
+
+def getAllDirPositions(position):
+    return [[[position[0]  , position[1]-1], 'n'],
+            [[position[0]+1, position[1]  ], 'e'],
+            [[position[0]  , position[1]+1], 's'],
+            [[position[0]-1, position[1]  ], 'w']]
+
+# def getDirPosition(reindeer, direction): 
+#     return getAllDirPositions([direction])
+
+# def rotate(direction, rotation): # CW=1, CCW=-1
+#     directions = ['n', 'e', 's', 'w']
+#     dir = (direction + len(directions) + rotation) % len(directions)
+#     return dir
+
+# Maze related functions
+# def isValidPosition(maze, position):
+#     return isEmpty(maze, position)
+
+def setMazeCell(maze, cell, cost):
+    maze[cell[1]][cell[0]] = cost
+
+def getMazeCell(maze, cell):
+    return maze[cell[1]][cell[0]]
+
+def getNextPositionsInMaze(maze, reindeer, LAST):
+    if all([a==b for a,b in zip(reindeer[0], LAST)]):
+        return []
     
-    boxSides = getBoxSides(warehouse, boxPos)
-    nextPositions = [getNextPosition(pos, direction) for pos in boxSides]
+    currentPosition  = reindeer[0]
+    currentDirection = reindeer[1]
+    currentCost      = reindeer[2]
 
-    if isWall(warehouse, nextPositions[0]) or isWall(warehouse, nextPositions[1]):
-        return False
-    else:
-        canMoveLeft  = isEmpty(warehouse, nextPositions[0]) or canMoveVertical(warehouse, nextPositions[0], direction)
-        canMoveRight = isEmpty(warehouse, nextPositions[1]) or canMoveVertical(warehouse, nextPositions[1], direction)
+    directions = ['n','e','s','w']
+    allNextPositions = getAllDirPositions(currentPosition)
+
+    nextPositions = []
+    for newPosition, newDirection in allNextPositions:
+        ROTATION_COST = 1000
+        FORWARD_COST  = 1
+
+        rotationCW = abs(directions.index(newDirection) - directions.index(currentDirection))
+        rotationCCW = 4 - rotationCW
+        rotations = min([rotationCW,rotationCCW])
+
+        newCost = currentCost + ((rotations * ROTATION_COST) + FORWARD_COST)
         
-        return canMoveLeft and canMoveRight
+        # Write cost to cell
+        if not isWall(maze, newPosition):
+            if isEnd(maze, newPosition) or isEmpty(maze, newPosition):
+                setMazeCell(maze, newPosition, newCost)
+                nextPositions.append([newPosition, newDirection, newCost])
+            elif isStart(maze, newPosition):
+                continue
+            else:
+                cellCost = getMazeCell(maze, newPosition)
+                if newCost < cellCost:
+                    setMazeCell(maze, newPosition, newCost)
+                    nextPositions.append([newPosition, newDirection, newCost])
 
-def moveVertical(warehouse, boxPos, direction):
-    newWarehouse = copy.deepcopy(warehouse)
+    return nextPositions
 
-    boxSides = getBoxSides(warehouse, boxPos)
-    nextPositions = [getNextPosition(pos, direction) for pos in boxSides]
+
+def floodFill(MAZE, FIRST, LAST):
+    maze = copy.deepcopy(MAZE)
+
+    cost = 0
+    newPositions = [[FIRST, 'e', cost]]
+    setMazeCell(maze, FIRST, cost)
+    while len(newPositions):
+        nextPositions = [] 
+        for cell in newPositions:
+            nextPositions.extend(getNextPositionsInMaze(maze, cell, LAST))
+        cost += 1
+        # printMaze(maze)
+        newPositions = nextPositions
+    return maze
+
+
+
+def getNextTilesInMaze(maze, reindeerPos, FIRST, LAST):
+    if all([a==b for a,b in zip(reindeerPos, LAST)]):
+        return []
     
-    for newPosition in nextPositions:
-        if isBox(newWarehouse,newPosition):
-            newWarehouse = moveVertical(newWarehouse, newPosition, direction)
-    
-    newLeftSide, newRightSide = nextPositions
-    newWarehouse[newLeftSide[1]][newLeftSide[0]] = TOKEN_BOX_LEFT
-    newWarehouse[newRightSide[1]][newRightSide[0]] = TOKEN_BOX_RIGHT
+    currentPosition  = reindeerPos
 
-    leftSide, rightSide = boxSides
-    newWarehouse[leftSide[1]][leftSide[0]] = TOKEN_EMPTY
-    newWarehouse[rightSide[1]][rightSide[0]] = TOKEN_EMPTY
+    allNextPositions = [position for position, dir in getAllDirPositions(currentPosition)]
 
-    return newWarehouse
+    # Remove not interesting tiles
+    allNextPositions = [position for position in allNextPositions if not isWall(maze, position) and not isEmpty(maze, position)]
 
-def moveBox(warehouse, boxPos, direction):
-    newWarehouse = copy.deepcopy(warehouse)
+    if reindeerPos == FIRST:
+        # Remove tiles not in the best paths
+        allNextPositions = [position for position in allNextPositions if \
+                            (getMazeCell(maze, reindeerPos) - getMazeCell(maze, position) == 1) or \
+                            (getMazeCell(maze, reindeerPos) - getMazeCell(maze, position) == 1001)]
+    else:
+    # Remove tiles not in the best paths
+        allNextPositions = [position for position in allNextPositions if \
+                            (getMazeCell(maze, reindeerPos) - getMazeCell(maze, position) == 1)    or \
+                            (getMazeCell(maze, reindeerPos) - getMazeCell(maze, position) == 1001) or \
+                            (getMazeCell(maze, position) - getMazeCell(maze, reindeerPos) == 999)]
 
-    if direction == '^' or direction == 'v':
-        if canMoveVertical(newWarehouse, boxPos, direction):
-            newWarehouse = moveVertical(newWarehouse, boxPos, direction)
-            return True, newWarehouse
-    elif direction == '>' or direction == '<':
-        pos = findEmptyOrWall(newWarehouse, boxPos, direction)
-        if isEmpty(warehouse, pos):
-            newWarehouse[boxPos[1]] = shiftHorizontal(newWarehouse[boxPos[1]], boxPos, pos, direction)
-            return True, newWarehouse
-    
-    return False, newWarehouse
+    return allNextPositions
 
-def move(warehouse, robot, direction):
-    newWarehouse = copy.deepcopy(warehouse)
-    newRobot     = copy.deepcopy(robot)
+def countTilesInBestPaths(MAZE, FIRST, LAST):
+    maze = copy.deepcopy(MAZE)
+    printingMaze = copy.deepcopy(MAZE)
 
-    def moveRobot(warehouse, robot, position):
-        warehouse[robot[1]][robot[0]] = TOKEN_EMPTY
-        warehouse[position[1]][position[0]] = TOKEN_ROBOT
-        return warehouse, position
+    allTiles = []
 
-    nextPosition = getNextPosition(robot, direction)
+    newPositions = [FIRST]
+    while len(newPositions):
+        allTiles.extend(newPositions)
+        nextPositions = [] 
+        for cell in newPositions:
+            nextPositions.extend(getNextTilesInMaze(maze, cell, FIRST, LAST))
+            setMazeCell(printingMaze, cell, '.')
+        # printMaze(printingMaze)
+        newPositions = nextPositions
+    return allTiles
 
-    if isEmpty(newWarehouse, nextPosition):
-        newWarehouse, newRobot = moveRobot(newWarehouse, robot, nextPosition)
 
-    elif isBox(newWarehouse, nextPosition):
-        moved, newWarehouse = moveBox(newWarehouse, nextPosition, direction)
-        if moved:
-            newWarehouse, newRobot = moveRobot(newWarehouse, robot, nextPosition)
-
-    return newWarehouse, newRobot
-
-#################################################
-# Part 2 - Goods Positioning System (Big boxes) #
-#################################################
-
-# Helper functions for part 2
-def calculateGPS(warehouse, TOKEN):
-    total = 0
-    for y in range(len(warehouse)):
-        for x in range(len(warehouse[0])):
-            if warehouse[y][x] == TOKEN:
-                total += y*100 + x
-    return total
+# ###################################
+# # Part 1 - Find lowest score path #
+# ###################################
 
 if __name__ == "__main__":
-    SECOND_WAREHOUSE = convertWarehouse(INITIAL_WAREHOUSE)
 
     # Print initial state of the problem
-    print("Second warehouse:")
-    warehouse = SECOND_WAREHOUSE
-    printWarehouse(warehouse)
-    # print(f"Robot moves: {INITIAL_ROBOT_MOVES}")
+    # print("Initial Maze:")
+    maze = INITIAL_MAZE
+    # printMaze(maze)
+    
+    # Init first part
+    START = findStart(maze)
+    END   = findEnd(maze)
+    # print(f"Start: {START} - End: {END}")
 
-    # Init second part
-    robot = findRobot(SECOND_WAREHOUSE)
-    print("Robot position:", robot)
+    # Run part 1
+    # filledMaze = floodFill(maze, END, START)
+    # print(f"\nFinal maze:")
+    # printMaze(filledMaze)
 
-    # Run part 2
-    with click.progressbar(INITIAL_ROBOT_MOVES) as bar: # Progress bar
-        for direction in bar:
-            warehouse, robot = move(warehouse, robot, direction) 
-            # print(f"\nMove {direction}:")
-            # printWarehouse(warehouse)
-
-    print(f"\nFinal warehouse:")
-    printWarehouse(warehouse)
-
-    # Run part 2: Calculate GPS
-    gpsTotal = calculateGPS(warehouse, TOKEN_BOX_LEFT)
+    filledMaze = floodFill(maze, START, END)
+    print(f"\nFinal maze:")
+    # printMaze(filledMaze)
 
     # Output result
-    print(f"Sum of all boxes' GPS coordinates (big boxes): {gpsTotal}")
+    lowestScore = getMazeCell(filledMaze, END)
+    print(f"Lowest score: {lowestScore}")
+
+    tiles = countTilesInBestPaths(filledMaze, END, START)
+    tiles = list(set(map(tuple,tiles)))
+    print(f"Number of tiles: {len(tiles)}")
+
+
