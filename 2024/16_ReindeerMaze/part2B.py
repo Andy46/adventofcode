@@ -7,9 +7,9 @@ import click
 import sys, os
 filepath = os.path.dirname(sys.argv[0])
 
+
 filename = f"{filepath}/00_example1.data"
 filename = f"{filepath}/00_example2.data"
-
 filename = f"{filepath}/00_test.data"
 
 # Node class
@@ -164,36 +164,45 @@ def connectAllNodes(MAZE, nodes, FIRST, LAST, MAX_PATH):
         newNodes = nextNodes
 
 def findPaths(nodes, FIRST, LAST, MAX_PATH):
-    
-    def findPathsTo (current, depth, LAST_NODE, MAX_DEPTH):
-        currentPaths = []
-        if depth >= MAX_DEPTH:
-            [[]]
-        elif current.isNext(LAST_NODE):
-            index = current.nexts['nodes'].index(LAST_NODE)
-            dir   = current.nexts['directions'][index]
-            return [[[LAST_NODE,dir]]]
-        elif current.hasNext(LAST_NODE):
-            nextNodes = zip(current.nexts['nodes'], current.nexts['directions'])
-            for next, newDir in nextNodes:
-                nexPos = next.position
-                if next.hasNext(LAST_NODE):
-                    nextPaths = findPathsTo(next, depth+1, LAST_NODE, MAX_DEPTH)
-                    if len(nextPaths) > 1:
-                        pass
-                    for path in nextPaths:
-                        newPath = [[next,newDir]]
-                        newPath.extend(path)
-                        currentPaths.append(newPath)
+    def findPathsToIterative(FIRST_NODE, LAST_NODE, MAX_DEPTH):
+        
+        finishedPaths = []
+        initialPath = [[FIRST_NODE, 'e']]
+        nextPaths = [initialPath]
 
-            return currentPaths
+        while len(nextPaths) > 0:
+            newPaths = []
+            for path in nextPaths:
+                # Coger el ultimo nodo
+                lastStep = path[-1]
 
-        else:
-            return []
+                currentNode = lastStep[0]
+                currentDir  = lastStep[1]
+
+                # Si hay varios nodos, duplicar par y añadir un nodo a cada path
+                nextNodes      = currentNode.nexts['nodes']
+                nextDirections = currentNode.nexts['directions']
+
+                for nextNode, nextDir in zip(nextNodes, nextDirections):
+                    nexPos = nextNode.position
+
+                    newPath = [elem for elem in path]
+                    newPath.append([nextNode, nextDir])
+
+                    if nextNode == LAST_NODE:
+                        finishedPaths.append(newPath)
+                    else:
+                        newPaths.append(newPath)
+
+            nextPaths = newPaths
+
+        return finishedPaths
 
     FIRST_NODE = getNode(nodes, FIRST)
     LAST_NODE  = getNode(nodes, LAST)
-    paths = findPathsTo(FIRST_NODE, 0, LAST_NODE, MAX_PATH)
+    paths = findPathsToIterative(FIRST_NODE, LAST_NODE, MAX_PATH)
+    return paths
+
     finalPaths = []
     for path in paths:
         newPath = [[FIRST_NODE,'e']]
@@ -207,13 +216,13 @@ def calculatePathCost(path):
 
     currentNode = path[0][0]
     currentDir  = path[0][1]
-    print(f"Node: {currentNode.position} - Cost: {cost}")
+    # print(f"Node: {currentNode.position} - Cost: {cost}")
 
     for node, dir in path[1:]:
         prevNode, currentNode = currentNode, node
         prevDir, currentDir   = currentDir, dir
         cost += 1 if prevDir == currentDir else 1001
-        print(f"Node: {currentNode.position} - Cost: {cost}")
+        # print(f"Node: {currentNode.position} - Cost: {cost}")
 
     return cost
         
@@ -223,7 +232,7 @@ def calculatePathCost(path):
 # ###################################
 
 if __name__ == "__main__":
-    MAX_PATH = 400    # Obtained from PART 1
+    MAX_PATH = 700    # Obtained from PART 1
     MAX_COST = 135512 # Obtained from PART 1
 
     # Print initial state of the problem
@@ -245,6 +254,7 @@ if __name__ == "__main__":
     connectAllNodes (MAZE, nodes, START, END, MAX_PATH)
     paths = findPaths (nodes, START, END, MAX_PATH)
     costs = [calculatePathCost(path) for path in paths]
+    print(f"Min cost: {min(costs)}")
 
     bestPaths = [path for path, cost in zip(paths,costs) if cost == min(costs)]
     bestCosts = [cost for path, cost in zip(paths,costs) if cost == min(costs)]
@@ -255,5 +265,5 @@ if __name__ == "__main__":
         allNodes.extend(pathNodes)
     allNodes = set(allNodes)
     print(len(allNodes))
-    print(bestCosts)
+    print(f"BestPaths: {len(bestPaths)} - BestCost: {bestCosts}")
 
