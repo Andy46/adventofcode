@@ -26,35 +26,6 @@ NUMKEYS = readMatrixFile(numpadfile)
 dirpadfile = f"{filepath}/01_dirpad.data"
 DIRKEYS = readMatrixFile(dirpadfile)
 
-
-# def findAllDistances(matrix):
-#     def getDistance(A, B):
-#         return sum([abs(pair[0] - pair[1]) for pair in zip(A, B)])
-
-#     def getPositionValue(matrix, x, y):
-#         return matrix[y][x]
-
-#     def findDistancesXY(matrix, x, y):
-#         distances = {}
-#         for yd in range(len(matrix)):
-#             for xd in range(len(matrix[0])):
-#                 value = getPositionValue(matrix, xd, yd)
-#                 distances[value] = getDistance([x,y], [xd,yd])
-#         return distances
-    
-#     distances = {}
-#     for y in range(len(matrix)):
-#         for x in range(len(matrix[0])):
-#             value = getPositionValue(matrix, x,y)
-#             distances[value] = findDistancesXY(matrix, x, y)
-#     return distances
-    
-# numDistances = findAllDistances(NUMKEYS)
-# dirDistances = findAllDistances(DIRKEYS)
-
-# print (f"Num distances: {numDistances}")
-# print (f"Dir distances: {dirDistances}")
-
 def getPositionValue(matrix, x, y):
     return matrix[y][x]
 
@@ -67,35 +38,60 @@ def getAllValuePositions(matrix):
 
 def getNumPadMoves(A, B):
     moves = []
-    Ax, Ay = A
+
+    LastX, LastY = len(NUMKEYS[0])-1, len(NUMKEYS)-1
+    ProhibitedPos = [(0, LastY)]
+
+    currentX, currentY = A
     Bx, By = B
-    if Ax < Bx: # First check left to right
-        moves.extend('>'*(Bx-Ax))
-    if Ax > Bx: # Then check right to left
-        moves.extend('<'*(Ax-Bx))
-    if Ay > By: # Then check bottom to up
-        moves.extend('^'*(Ay-By))
-    if Ay < By: # Then check up to bottom
-        moves.extend('v'*(By-Ay))
+
+    while currentX != Bx or currentY != By:
+        if currentX > Bx and (currentX-1, currentY) not in ProhibitedPos: # Then check right to left
+            moves.extend('<')
+            currentX -= 1
+        elif currentY > By and (currentX, currentY-1) not in ProhibitedPos: # Then check bottom to up
+            moves.extend('^')
+            currentY -= 1
+        elif currentX < Bx: # First check left to right
+            moves.extend('>')
+            currentX += 1
+        elif currentY < By: # Then check up to bottom
+            moves.extend('v')
+            currentY += 1
+
     moves.extend('A')
     return moves
 
 def getDirPadMoves1(A, B):
     moves = []
-    Ax, Ay = A
+
+    LastX, LastY = len(DIRKEYS[0])-1, len(DIRKEYS)-1
+    ProhibitedPos = [(0, 0)]
+
+    currentX, currentY = A
     Bx, By = B
-    if Ax < Bx: # First check left to right
-        moves.extend('>'*(Bx-Ax))
-    if Ax > Bx: # Then check right to left
-        moves.extend('<'*(Ax-Bx))
-    if Ay < By: # Then check up to bottom
-        moves.extend('v'*(By-Ay))
-    if Ay > By: # Then check bottom to up
-        moves.extend('^'*(Ay-By))
+
+    while currentX != Bx or currentY != By:
+        if currentX > Bx and (currentX-1, currentY) not in ProhibitedPos: # Then check right to left
+            moves.extend('<')
+            currentX -= 1
+        elif currentY < By and (currentX, currentY+1) not in ProhibitedPos: # Then check up to bottom
+            moves.extend('v')
+            currentY += 1
+        elif currentX < Bx: # First check left to right
+            moves.extend('>')
+            currentX += 1
+        elif currentY > By: # Then check bottom to up
+            moves.extend('^')
+            currentY -= 1
+
     moves.extend('A')
     return moves
 
+print(getDirPadMoves1([2,0],[0,1]))
+
 def getDirPadMoves2(A, B):
+    return getDirPadMoves1(A, B)
     moves = []
     Ax, Ay = A
     Bx, By = B
@@ -189,20 +185,20 @@ def calculateComplexity(code):
     # Get moves to control the final robot
     codeMoves = findMovesPad(NUMKEYS, code, getNumPadMoves)
     printSequence(code, 0, codeMoves)
-    # codeMovesSet = getAllCombinations(codeMoves)
+    codeMovesSet = getAllCombinations(codeMoves)
 
-    # dirMoves1Set = []
-    # for codeMoves in codeMovesSet:
-    dirMoves1 = findMovesPad(DIRKEYS, codeMoves, getDirPadMoves1)
-    #     dirMoves1Set.extend(getAllCombinations(dirMoves1))
+    dirMoves1Set = []
+    for codeMoves in codeMovesSet:
+        dirMoves1 = findMovesPad(DIRKEYS, codeMoves, getDirPadMoves1)
+        printSequence(code, 0, dirMoves1)
+        dirMoves1Set.extend(getAllCombinations(dirMoves1))
 
-    # dirMoves2Set = []
-    # for dirMoves1 in dirMoves1Set:
-    dirMoves2 = findMovesPad(DIRKEYS, dirMoves1, getDirPadMoves2)
-    #     # dirMoves2Set.extend(getAllCombinations(dirMoves2))
-    #     dirMoves2Set.append(dirMoves2)
-
-    
+    dirMoves2Set = []
+    for dirMoves1 in dirMoves1Set:
+        dirMoves2 = findMovesPad(DIRKEYS, dirMoves1, getDirPadMoves2)
+        printSequence(code, 0, dirMoves2)
+        # dirMoves2Set.extend(getAllCombinations(dirMoves2))
+        dirMoves2Set.append(dirMoves2)
 
     # printSequence(code, 0, dirMoves1)
 
@@ -210,16 +206,14 @@ def calculateComplexity(code):
 
     num, letter = re.findall("(\d+)([a-zA-Z])", code)[0]
     complexity = int(num) * len(dirMoves2)
-
-    if DEBUG:
-        printSequence(code, complexity, dirMoves2)
+    printSequence(code, complexity, dirMoves2)
 
     return complexity
 
 
 def calculateTotalComplexity(codes):
     totalComplexity = 0
-    for code in CODE_LIST:
+    for code in codes:
         complexity = calculateComplexity(code)
         totalComplexity += complexity
     return totalComplexity
