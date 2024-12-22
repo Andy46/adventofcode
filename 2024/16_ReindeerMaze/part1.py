@@ -147,14 +147,14 @@ def floodFill(MAZE, FIRST, LAST):
 if __name__ == "__main__":
 
     # Print initial state of the problem
-    print("Initial Maze:")
+    # print("Initial Maze:")
     maze = INITIAL_MAZE
-    printMaze(maze)
+    # printMaze(maze)
     
     # Init first part
     START = findStart(maze)
     END   = findEnd(maze)
-    print(f"Start: {START} - End: {END}")
+    # print(f"Start: {START} - End: {END}")
 
     # Run part 1
     # filledMaze = floodFill(maze, END, START)
@@ -162,8 +162,8 @@ if __name__ == "__main__":
     # printMaze(filledMaze)
 
     filledMaze = floodFill(maze, START, END)
-    print(f"\nFinal maze:")
-    printMaze(filledMaze)
+    # print(f"\nFinal maze:")
+    # printMaze(filledMaze)
 
     # Run part 1: Calculate GPS
     # gpsTotal = calculateGPS(warehouse)
