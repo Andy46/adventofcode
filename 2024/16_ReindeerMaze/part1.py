@@ -46,26 +46,50 @@ def isWall(maze, pos):
     TOKEN_WALL  = '#'
     return maze[pos[1]][pos[0]] == TOKEN_WALL
 
-def isEmpty(warehouse, pos):
+def isEmpty(maze, pos):
     TOKEN_EMPTY = '.'
-    return warehouse[pos[1]][pos[0]] == TOKEN_EMPTY
+    return maze[pos[1]][pos[0]] == TOKEN_EMPTY
 
-# Moving functions
-def getNextPosition(reindeer, direction): # Test performance if/else vs calculateAll/getToken
-    positions = {'n' : [reindeer[0]  , reindeer[1]-1],
-                 'e' : [reindeer[0]+1, reindeer[1]  ],
-                 's' : [reindeer[0]  , reindeer[1]+1],
-                 'w' : [reindeer[0]-1, reindeer[1]  ]}
-    return positions[direction] 
+# Transformation functions
+
+def getAllDirPositions(reindeer):
+    return {'n' : [reindeer[0]  , reindeer[1]-1],
+            'e' : [reindeer[0]+1, reindeer[1]  ],
+            's' : [reindeer[0]  , reindeer[1]+1],
+            'w' : [reindeer[0]-1, reindeer[1]  ]}
+
+def getDirPosition(reindeer, direction): 
+    return getAllDirPositions([direction])
 
 def rotate(direction, rotation): # CW=1, CCW=-1
     directions = ['n', 'e', 's', 'w']
     dir = (direction + len(directions) + rotation) % len(directions)
     return dir
 
-def move():
-    pass
+# Maze related functions
+def isValidPosition(maze, position):
+    return isEmpty(maze, position)
 
+def getNextPositionsInMaze(maze, reindeer):
+    allPosition = getAllDirPositions(reindeer)
+    validPositions = [position for position in allPositions if isValidPosition(maze, position)]
+    return validPositions
+
+def setMazeCell(maze, cell, cost):
+    maze[cell[1]][cell[0]] = cost
+
+def floodFill(MAZE, FIRST, LAST):
+    maze = copy.deepcopy(MAZE)
+
+    nextCells = [FIRST]
+    cost = 0
+    while len(nextCells):
+        for cell in nextCells:
+            setMazeCell(maze, cell, cost)
+            nextCells = getNextPositionsInMaze(maze, cell)
+            cost += 1
+        printMaze(maze)
+    return maze
 
 # ###################################
 # # Part 1 - Find lowest score path #
@@ -84,9 +108,10 @@ if __name__ == "__main__":
     print(f"Start: {START} - End: {END}")
 
     # Run part 1
+    filledMaze = floodFill(maze, END, START)
 
-    # print(f"\nFinal maze:")
-    # printMaze(maze)
+    print(f"\nFinal maze:")
+    printMaze(filledMaze)
 
     # Run part 1: Calculate GPS
     # gpsTotal = calculateGPS(warehouse)
