@@ -7,11 +7,11 @@ import click
 import sys, os
 filepath = os.path.dirname(sys.argv[0])
 
-
 filename = f"{filepath}/00_example1.data"
 filename = f"{filepath}/00_example2.data"
 
 filename = f"{filepath}/00_test.data"
+
 # Node class
 class MyNode:    
     def __init__(self, position, value):
@@ -132,50 +132,6 @@ def getMovements(position):
             [[position[0]  , position[1]+1], 's'],
             [[position[0]-1, position[1]  ], 'w']]
 
-# Maze related functions
-# def setMazeCell(maze, cell, token):
-#     maze[cell[1]][cell[0]] = token
-
-# def getMazeCell(maze, cell):
-#     return maze[cell[1]][cell[0]]
-
-# def getNextPositionsInMaze(maze, reindeer, LAST):
-#     if all([a==b for a,b in zip(reindeer[0], LAST)]):
-#         return []
-    
-#     currentPosition  = reindeer[0]
-#     currentDirection = reindeer[1]
-#     currentCost      = reindeer[2]
-
-#     directions = ['n','e','s','w']
-#     allNextPositions = getAllDirPositions(currentPosition)
-
-#     nextPositions = []
-#     for newPosition, newDirection in allNextPositions:
-#         ROTATION_COST = 1000
-#         FORWARD_COST  = 1
-
-#         rotationCW = abs(directions.index(newDirection) - directions.index(currentDirection))
-#         rotationCCW = 4 - rotationCW
-#         rotations = min([rotationCW,rotationCCW])
-
-#         newCost = currentCost + ((rotations * ROTATION_COST) + FORWARD_COST)
-        
-#         # Write cost to cell
-#         if not isWall(maze, newPosition):
-#             if isEnd(maze, newPosition) or isEmpty(maze, newPosition):
-#                 setMazeCell(maze, newPosition, newCost)
-#                 nextPositions.append([newPosition, newDirection, newCost])
-#             elif isStart(maze, newPosition):
-#                 continue
-#             else:
-#                 cellCost = getMazeCell(maze, newPosition)
-#                 if newCost < cellCost:
-#                     setMazeCell(maze, newPosition, newCost)
-#                     nextPositions.append([newPosition, newDirection, newCost])
-
-#     return nextPositions
-
 def getNode (NODES, POS):
     return NODES[POS[1]][POS[0]]
 
@@ -198,7 +154,6 @@ def connectAllNodes(MAZE, nodes, FIRST, LAST, MAX_PATH):
 
     FIRST_NODE = getNode(nodes, FIRST)
     newNodes = [FIRST_NODE]
-    count = 0
     while len(newNodes) > 0:
         nextNodes = []
         for node in newNodes:
@@ -207,14 +162,68 @@ def connectAllNodes(MAZE, nodes, FIRST, LAST, MAX_PATH):
                 if len(tempNodes) > 0:
                     nextNodes.extend(tempNodes)
         newNodes = nextNodes
-        count += 1
+
+def findPaths(nodes, FIRST, LAST, MAX_PATH):
+    
+    def findPathsTo (current, depth, LAST_NODE, MAX_DEPTH):
+        currentPaths = []
+        if depth >= MAX_DEPTH:
+            [[]]
+        elif current.isNext(LAST_NODE):
+            index = current.nexts['nodes'].index(LAST_NODE)
+            dir   = current.nexts['directions'][index]
+            return [[[LAST_NODE,dir]]]
+        elif current.hasNext(LAST_NODE):
+            nextNodes = zip(current.nexts['nodes'], current.nexts['directions'])
+            for next, newDir in nextNodes:
+                nexPos = next.position
+                if next.hasNext(LAST_NODE):
+                    nextPaths = findPathsTo(next, depth+1, LAST_NODE, MAX_DEPTH)
+                    if len(nextPaths) > 1:
+                        pass
+                    for path in nextPaths:
+                        newPath = [[next,newDir]]
+                        newPath.extend(path)
+                        currentPaths.append(newPath)
+
+            return currentPaths
+
+        else:
+            return []
+
+    FIRST_NODE = getNode(nodes, FIRST)
+    LAST_NODE  = getNode(nodes, LAST)
+    paths = findPathsTo(FIRST_NODE, 0, LAST_NODE, MAX_PATH)
+    finalPaths = []
+    for path in paths:
+        newPath = [[FIRST_NODE,'e']]
+        newPath.extend(path)
+        finalPaths.append(newPath)
+    return finalPaths
+
+def calculatePathCost(path):
+    print ("New path")
+    cost = 0
+
+    currentNode = path[0][0]
+    currentDir  = path[0][1]
+    print(f"Node: {currentNode.position} - Cost: {cost}")
+
+    for node, dir in path[1:]:
+        prevNode, currentNode = currentNode, node
+        prevDir, currentDir   = currentDir, dir
+        cost += 1 if prevDir == currentDir else 1001
+        print(f"Node: {currentNode.position} - Cost: {cost}")
+
+    return cost
+        
 
 # ###################################
-# # Part 1 - Find lowest score path #
+# # Part 2 - Find lowest score path #
 # ###################################
 
 if __name__ == "__main__":
-    MAX_PATH = 600    # Obtained from PART 1
+    MAX_PATH = 400    # Obtained from PART 1
     MAX_COST = 135512 # Obtained from PART 1
 
     # Print initial state of the problem
@@ -234,19 +243,17 @@ if __name__ == "__main__":
 
     # Calculate
     connectAllNodes (MAZE, nodes, START, END, MAX_PATH)
-    paths = getPaths (MAZE, nodes, START, END, MAX_PATH)
-    pass
+    paths = findPaths (nodes, START, END, MAX_PATH)
+    costs = [calculatePathCost(path) for path in paths]
 
+    bestPaths = [path for path, cost in zip(paths,costs) if cost == min(costs)]
+    bestCosts = [cost for path, cost in zip(paths,costs) if cost == min(costs)]
 
-    # print(f"\nFinal maze:")
-    # printNodes(nodes)
-
-    # Output result
-    # lowestScore = getMazeCell(filledMaze, END)
-    # print(f"Lowest score: {lowestScore}")
-
-    # tiles = countTilesInBestPaths(filledMaze, END, START)
-    # tiles = list(set(map(tuple,tiles)))
-    # print(f"Number of tiles: {len(tiles)}")
-
+    allNodes = []
+    for path in bestPaths:
+        pathNodes = [node for node, dir in path]
+        allNodes.extend(pathNodes)
+    allNodes = set(allNodes)
+    print(len(allNodes))
+    print(bestCosts)
 
