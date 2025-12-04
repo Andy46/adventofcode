@@ -3,8 +3,8 @@ import hashlib
 # Files
 import sys, os
 filepath = os.path.dirname(sys.argv[0])
-filename = f"{filepath}/example1.data"
-filename = f"{filepath}/test1.data"
+filename = f"{filepath}/example.data"
+filename = f"{filepath}/test.data"
 
 INITIAL_POS = 50
 
