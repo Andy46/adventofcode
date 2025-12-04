@@ -1,5 +1,3 @@
-import hashlib
-
 # Files
 import sys, os
 filepath = os.path.dirname(sys.argv[0])
@@ -15,7 +13,7 @@ with open(filename, "r") as file:
     for line in [line.strip() for line in file.readlines()]:
         op = line[0]
         delta = int(line[1:])
-        currentPos = (currentPos - delta) if op == 'R' else (currentPos + delta)
+        currentPos = (currentPos + delta) if op == 'R' else (currentPos - delta)
         print(f"Current position: {currentPos}")
         if currentPos % 100 == 0:
             password = (password + 1)
