@@ -56,39 +56,35 @@ def calcAllDistances(boxes : list[tuple]) -> list[list[float]]:
 def sortDistances(distances):
     return sorted(distances, key=lambda x:x.getDistance())
 
-def makeConnections(boxes, distances):
+def makeConnections(distances : list[Distance], count):
     circuits = []
-    connectionCount = 1000
-    for i in range(connectionCount):
-        inserted = False
+    for i in range(count):
         dist = distances[i]
+        circuitA = None
+        circuitB = None
+        # Find boxes in circuits
         for circuit in circuits:
-            if dist.boxA in circuit or dist.boxB in circuit:
-                circuit.add(dist.boxA)
-                circuit.add(dist.boxB)
-                inserted = True
+            if dist.boxA in circuit:
+                circuitA = circuit
+            if dist.boxB in circuit:
+                circuitB = circuit
+            if circuitA is not None and circuitB is not None:
                 break
-        if not inserted:
+
+        if circuitA is None and circuitB is None:
             newCircuit = set()
             newCircuit.add(dist.boxA)
             newCircuit.add(dist.boxB)
             circuits.append(newCircuit)
-    return circuits
+        elif circuitA is None:
+            circuitB.add(dist.boxA)
+        elif circuitB is None:
+            circuitA.add(dist.boxB)
+        elif circuitA != circuitB:
+            circuitA.update(circuitB)
+            circuits.remove(circuitB)
 
-def reduceCircuits(oldCircuits):
-    newCircuits = []
-    count = 0
-    for oldCircuit in oldCircuits:
-        inserted = False
-        for newCircuit in newCircuits:
-            if any([box in newCircuit for box in oldCircuit]):
-                newCircuit.update(oldCircuit)
-                inserted = True
-                count = count + 1
-                break
-        if not inserted:
-            newCircuits.append(oldCircuit)
-    return newCircuits, count
+    return circuits
 
 # PUZZLE SOLVING
 if __name__=="__main__":
@@ -96,11 +92,7 @@ if __name__=="__main__":
     # printData(boxes)
     distances = calcAllDistances(boxes)
     # printData(distances)
-    circuits = makeConnections(boxes, distances)
-    # printData(circuits)
-    circuits, c = reduceCircuits(circuits)
-    while c != 0:
-        circuits, c = reduceCircuits(circuits)
+    circuits = makeConnections(distances, 1000)
     # printData(circuits)
     orderedCircuits = sorted(circuits, key=lambda x:len(x), reverse=True)
     # printData(orderedCircuits)
